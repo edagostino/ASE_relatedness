@@ -1,4 +1,4 @@
-# ASE_relatedness
+# ASE relatedness project
 
 I used the following to generate allele-specific expression data at variant coding sites in the *Drosophila melanogaster* genome. Note that this shows the steps for the head expression data; the body expression data was done in parallel, identically. Also, note that some of these were submitted as SLURM jobs, some were submitted via SLURM wrappers (left in the code here), and some were just run on the login node.
 

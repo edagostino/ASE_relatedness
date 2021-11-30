@@ -134,9 +134,8 @@ bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%DP[\t%SAMPLE=%AD]\n' head_CDS_bial
 
 For clarity, we use three `sed`s . The first one deletes the sample names at each site, since we have those from the header we made above, and the second and third one delete the always-zero mappings to <*>. We do this twice because sometimes that zero is followed by a tab (when it's within a line) and sometimes it's followed by a newline character (at the end of a line).
 
-Last, we just concatenate our header to this. Ta-da!
+Last, we just concatenate our header to this. Yay!
 
 ```bash
-cat final_head_header.txt final_head_rows.txt > final_head_table.txt
+cat final_head_header.txt final_head_rows.txt > final_head_all.txt
 ```
-

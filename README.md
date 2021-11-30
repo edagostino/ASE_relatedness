@@ -115,5 +115,9 @@ module load bcftools
 bcftools view -m3 -M3 -e 'INFO/INDEL=1' -Oz -o head_CDS_biallelic_SNPs.vcf.gz head_CDS.vcf.gz
 ```
 
-Note that `-m3 -M3` is different from the standard `-m2 -M2` used for finding biallelic sites from the output of `bcftools call` . This is because, without callling variants, bcftools doesn't assign an alternate allele definitively, instead listing alternate alleles as (e.g.) "A, <\*>". <\*> represents an alternate allele not known (see section 5.5 of the VCF 4.3 specificiation). Therefore, we want sites with three alleles: the reference allele, the "unofficial" alternate allele, and the <\*> (hence `-m3 -M3`). The `-e 'INFO/INDEL=1'` flag drops indels as well. 
+Note that `-m3 -M3` is different from the standard `-m2 -M2` used for finding biallelic sites from the output of `bcftools call` . This is because, without callling variants, bcftools doesn't assign an alternate allele definitively, instead listing alternate alleles as (e.g.) "A, <\*>". <\*> represents an alternate allele not known (see section 5.5 of the VCF 4.3 specification). Therefore, we want sites with three alleles: the reference allele, the "unofficial" alternate allele, and the <\*> (hence `-m3 -M3`). The `-e 'INFO/INDEL=1'` flag drops indels as well.
+
+##### Editing VCF to make ASE table
+
+
 

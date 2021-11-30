@@ -119,5 +119,24 @@ Note that `-m3 -M3` is different from the standard `-m2 -M2` used for finding bi
 
 ##### Editing VCF to make ASE table
 
+We now have the VCF that we'll conduct our downstream analyses on, but we want to createa a .txt file that's clearer and easier to manipulate. To do this, we first create a header with `bcftools query -l`, by printing five headers we want as well as the list of samples. We use `sed` to delete the file paths for clarity, and then use `tr` to tab-delimit our list. 
 
+```bash
+module load bcftools
+printf "CHROM\nPOS\nREF\nALT\nDP\n$(bcftools query -l head_CDS_biallelic_SNPs.vcf.gz | sed s'|\./head_bams/||')" | tr "\n" "\t" > final_head_header.txt
+```
+
+Next, we create the body of our text file with`bcftools query -f`, taking the columns we mentioned in our previous command, and printing allele depths at each sample. Note allele depths are represented as, say, `5,1,0` (5 reads mapping to the reference allele, one mapping to the primary inferred alternate allele, and zero mapping to <*>). While the first two are variable, the last number is always zero, since if there were a mapping to an alternate base besides the reference or primary alternate, it wouldn't be a biallelic SNP, and we're only using those.
+
+```bash
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%DP[\t%SAMPLE=%AD]\n' head_CDS_biallelic_SNPs.vcf.gz | sed 's|\./head_bams/[^=]*=||g' | sed 's|,0\t|\t|g' | sed 's|,0\n|\n|g' > final_head_rows.txt
+```
+
+For clarity, we use three `sed`s . The first one deletes the sample names at each site, since we have those from the header we made above, and the second and third one delete the always-zero mappings to <*>. We do this twice because sometimes that zero is followed by a tab (when it's within a line) and sometimes it's followed by a newline character (at the end of a line).
+
+Last, we just concatenate our header to this. Ta-da!
+
+```bash
+cat final_head_header.txt final_head_rows.txt > final_head_table.txt
+```
 

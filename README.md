@@ -168,3 +168,4 @@ Finally, I used bcftools view to do some filtering. `N_PASS` is quite cool, and 
 bcftools view -i'N_PASS(FORMAT/AD[:0]+FORMAT/AD[:1]>9)>49 && INFO/DP>5000 && INFO/DP<100000' -Oz -o final_head_all_filt.vcf.gz head_genic_regions_biallelic_SNPs.vcf.gz
 ```
 
+Note that I don't delete a SNP for a sample if it has less than 10 reads — I can look into how to do that for downstream analyses, but it still does filter on the presence of those sites nonetheless.

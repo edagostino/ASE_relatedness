@@ -1,4 +1,4 @@
-# ASE relatedness project
+ASE relatedness project
 
 I used the following to generate allele-specific expression data at variant coding sites in the *Drosophila melanogaster* genome. Note that this shows the steps for the head expression data; the body expression data was done in parallel, identically. Also, note that some of these were submitted as SLURM jobs, some were submitted via SLURM wrappers (left in the code here), and some were just run on the login node.
 
@@ -139,3 +139,32 @@ Last, we just concatenate our header to this. Yay!
 ```bash
 cat final_head_header.txt final_head_rows.txt > final_head_all.txt
 ```
+
+##### Redoing the filtering
+
+After conversations with Julien and Luisa, I redid some filtering. First, I redownloaded Luisa's gene_pos_dmel.txt. To manipulate it, I want to delete the first row, rename the chromosomes (i.e., "2L" instead of "chr2L"), and only use regions on the main chromosomes.
+
+```bash
+cat gene_pos_dmel.txt | tail -n +2 | sed 's/chr//' | awk '{ if (($2 == "X") || ($2 == "2L") || ($2 == "2R") || ($2 == "3L") || ($2 == "3R") || ($2 == "4")) {print $2 "\t" $3 "\t" $4}}' > formatted_gene_pos_dmel.txt
+```
+
+I used a series of bcftools view commands to subset the VCF. First, I used the newly-formatted table to filter to only the gene regions. Since we're working with expression data, everything should map, so this is more of a sanity check, which it passed: the VCF before this filtering step was 33GB, and after, it was 32G: I'm guessing just a few .bams may have mapped to the wrong place. I will redo this to annotate with FlyBase gene names instead of just filter by their regions, which will be more informative, too.
+
+```bash
+bcftools view -R ./gene_positions/genic_regions_for_view.txt -Oz -o head_genic_regions.vcf.gz head_all.vcf.gz
+```
+
+Next, I filtered to only use SNPs. As before, note that `-m3 -M3` is different from the standard `-m2 -M2` used for finding biallelic sites from the output of `bcftools call` . This is because, without callling variants, bcftools doesn't assign an alternate allele definitively, instead listing alternate alleles as (e.g.) "A, <\*>". <\*> represents an alternate allele not known (see section 5.5 of the VCF 4.3 specification). Therefore, we want sites with three alleles: the reference allele, the "unofficial" alternate allele, and the <\*> (hence `-m3 -M3`). The `-e 'INFO/INDEL=1'` flag drops indels as well.
+
+I should have combined these bcftools views to be more efficient, but I did them separately because I was working through what I needed at the time.
+
+```bash
+bcftools view -m3 -M3 -e 'INFO/INDEL=1' -Oz -o head_genic_regions_biallelic_SNPs.vcf.gz head_genic_regions.vcf.gz
+```
+
+Finally, I used bcftools view to do some filtering. `N_PASS` is quite cool, and relatively new to bcftools. Basically, it lets you specify the number of samples needed to pass an expression check. I told it that the expression check I needed those samples to pass was `FORMAT/AD[:0]` (the number of alleles mapping to the reference) plus`FORMAT/AD[:1]` (the number of alleles mapping to the first alternate, which is really the only alternate for SNPs) had to be more than 9, and I told it that I need more than 49 samples to pass that expression check for a site to include that site. I also needed the total depth at that site, across samples, to be between 5k and 100k.
+
+```bash
+bcftools view -i'N_PASS(FORMAT/AD[:0]+FORMAT/AD[:1]>9)>49 && INFO/DP>5000 && INFO/DP<100000' -Oz -o final_head_all_filt.vcf.gz head_genic_regions_biallelic_SNPs.vcf.gz
+```
+
